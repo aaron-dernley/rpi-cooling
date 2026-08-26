@@ -1,0 +1,72 @@
+id: 3e27914c-408d-4d2a-9098-3f8619be11cd
+name: rpi-cooling
+description: >-
+  Read PWM fan RPM/duty/cooling-state from rpi-local and assert the fan
+  hasn't stalled — commanded to spin (pwmDuty > 0) but the tachometer
+  reports 0 RPM. That combination is the entire point of this extension:
+  it's a real failure mode that produces no other symptom until the SoC
+  starts thermal throttling. Scheduled every 5 minutes, same cadence as
+  the telemetry-focused @aaronge/host-health/@aaronge/rpi-health
+  workflows, since a stalled fan is time-sensitive in a way boot
+  configuration isn't.
+version: 1
+tags: {}
+trigger:
+  schedule: "*/5 * * * *"
+jobs:
+  - name: collect
+    description: Read fan RPM/duty/cooling-state.
+    dependsOn: []
+    steps:
+      - name: readCooling
+        task:
+          type: model_method
+          modelIdOrName: rpi-local
+          methodName: readCooling
+        dependsOn: []
+
+  - name: assert
+    description: Fail the run when the fan has stalled.
+    dependsOn:
+      - job: collect
+        condition:
+          type: completed
+    steps:
+      - name: fan-not-stalled
+        allowFailure: false
+        task:
+          type: assert
+          expr: >-
+            data.latest("rpi-local", "cooling").attributes.stalled == false
+          message: >-
+            Fan stalled: rpm=${{ data.latest("rpi-local", "cooling").attributes.rpm }}
+            while pwmDuty=${{ data.latest("rpi-local", "cooling").attributes.pwmDuty }}
+            (${{ data.latest("rpi-local", "cooling").attributes.pwmPercent }}%) —
+            commanded to spin but the tachometer reports it isn't. A fan
+            that spins but doesn't cool is silent until the SoC starts
+            thermal throttling; this is the earliest warning available.
+          severity: high
+        dependsOn: []
+
+  - name: report
+    description: >-
+      Print a one-screen summary. Depends on collect only (not assert), so
+      it still runs when an assertion fails.
+    dependsOn:
+      - job: collect
+        condition:
+          type: completed
+    steps:
+      - name: summarize
+        task:
+          type: model_method
+          modelType: "command/shell"
+          modelName: rpi-cooling-summary
+          methodName: execute
+          inputs:
+            run: >-
+              echo "rpi-cooling: rpi-local" &&
+              echo "  rpm: ${{ data.latest('rpi-local', 'cooling').attributes.rpm }} (stalled=${{ data.latest('rpi-local', 'cooling').attributes.stalled }})" &&
+              echo "  pwm: ${{ data.latest('rpi-local', 'cooling').attributes.pwmDuty }}/255 (${{ data.latest('rpi-local', 'cooling').attributes.pwmPercent }}%)" &&
+              echo "  cooling state: ${{ data.latest('rpi-local', 'cooling').attributes.coolingState }}/${{ data.latest('rpi-local', 'cooling').attributes.maxCoolingState }}"
+        dependsOn: []
