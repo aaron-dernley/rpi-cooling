@@ -18,9 +18,9 @@ swamp extension pull @aaronge/rpi-cooling
 ## Usage
 
 ```sh
-swamp model create @aaronge/rpi-cooling rpi-local
+swamp model create @aaronge/rpi-cooling cooling-local
 
-swamp model method run rpi-local readCooling
+swamp model method run cooling-local readCooling
 ```
 
 The method writes one resource: `cooling`. Every field is described — run
@@ -30,7 +30,7 @@ Reference the latest snapshot from a workflow assert step or another model:
 
 ```yaml
 expr: >-
-  data.latest("rpi-local", "cooling").attributes.stalled == false
+  data.latest("cooling-local", "cooling").attributes.stalled == false
 ```
 
 ## Global arguments
@@ -65,7 +65,11 @@ names a Raspberry Pi — before writing anything.
 
 ## Workflow
 
-The extension ships an `rpi-cooling` workflow: a `collect` job runs
+The workflow is listed under `workflows:` in `manifest.yaml`, so
+`swamp extension pull @aaronge/rpi-cooling` installs it alongside the model. It
+expects a model instance named `cooling-local`.
+
+The extension ships an `@aaronge/rpi-cooling` workflow: a `collect` job runs
 `readCooling`, an `assert` job fails the run when `stalled == true`
 (`allowFailure: false` — a stalled fan is exactly the signal this model
 exists to catch), and a `report` job prints a one-screen summary regardless

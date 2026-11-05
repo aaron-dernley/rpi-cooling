@@ -1,7 +1,7 @@
 id: 3e27914c-408d-4d2a-9098-3f8619be11cd
-name: rpi-cooling
+name: "@aaronge/rpi-cooling"
 description: >-
-  Read PWM fan RPM/duty/cooling-state from rpi-local and assert the fan
+  Read PWM fan RPM/duty/cooling-state from cooling-local and assert the fan
   hasn't stalled — commanded to spin (pwmDuty > 0) but the tachometer
   reports 0 RPM. That combination is the entire point of this extension:
   it's a real failure mode that produces no other symptom until the SoC
@@ -21,7 +21,7 @@ jobs:
       - name: readCooling
         task:
           type: model_method
-          modelIdOrName: rpi-local
+          modelIdOrName: cooling-local
           methodName: readCooling
         dependsOn: []
 
@@ -37,11 +37,11 @@ jobs:
         task:
           type: assert
           expr: >-
-            data.latest("rpi-local", "cooling").attributes.stalled == false
+            data.latest("cooling-local", "cooling").attributes.stalled == false
           message: >-
-            Fan stalled: rpm=${{ data.latest("rpi-local", "cooling").attributes.rpm }}
-            while pwmDuty=${{ data.latest("rpi-local", "cooling").attributes.pwmDuty }}
-            (${{ data.latest("rpi-local", "cooling").attributes.pwmPercent }}%) —
+            Fan stalled: rpm=${{ data.latest("cooling-local", "cooling").attributes.rpm }}
+            while pwmDuty=${{ data.latest("cooling-local", "cooling").attributes.pwmDuty }}
+            (${{ data.latest("cooling-local", "cooling").attributes.pwmPercent }}%) —
             commanded to spin but the tachometer reports it isn't. A fan
             that spins but doesn't cool is silent until the SoC starts
             thermal throttling; this is the earliest warning available.
@@ -65,8 +65,8 @@ jobs:
           methodName: execute
           inputs:
             run: >-
-              echo "rpi-cooling: rpi-local" &&
-              echo "  rpm: ${{ data.latest('rpi-local', 'cooling').attributes.rpm }} (stalled=${{ data.latest('rpi-local', 'cooling').attributes.stalled }})" &&
-              echo "  pwm: ${{ data.latest('rpi-local', 'cooling').attributes.pwmDuty }}/255 (${{ data.latest('rpi-local', 'cooling').attributes.pwmPercent }}%)" &&
-              echo "  cooling state: ${{ data.latest('rpi-local', 'cooling').attributes.coolingState }}/${{ data.latest('rpi-local', 'cooling').attributes.maxCoolingState }}"
+              echo "rpi-cooling: cooling-local" &&
+              echo "  rpm: ${{ data.latest('cooling-local', 'cooling').attributes.rpm }} (stalled=${{ data.latest('cooling-local', 'cooling').attributes.stalled }})" &&
+              echo "  pwm: ${{ data.latest('cooling-local', 'cooling').attributes.pwmDuty }}/255 (${{ data.latest('cooling-local', 'cooling').attributes.pwmPercent }}%)" &&
+              echo "  cooling state: ${{ data.latest('cooling-local', 'cooling').attributes.coolingState }}/${{ data.latest('cooling-local', 'cooling').attributes.maxCoolingState }}"
         dependsOn: []
