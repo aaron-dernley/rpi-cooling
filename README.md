@@ -79,11 +79,12 @@ of whether the assert job passed. Scheduled every 5 minutes via
 time-sensitive in a way boot configuration (`@aaronge/rpi-boot-config`)
 isn't.
 
-Pairs naturally with `@aaronge/rpi-health`'s core temperature: a future
-cross-cutting `thermal-integrity` workflow asserting "if temperature > 60°C
-then `rpi-cooling` rpm > 0" catches a dead fan before it becomes a thermal
-event — not yet built, tracked alongside the rest of the Raspberry Pi
-extension family's cross-cutting workflows.
+Pairs naturally with `@aaronge/rpi-health`'s core temperature: the
+cross-cutting `thermal-integrity` workflow joins the two to catch a dead fan
+before it becomes a thermal event. It lives in the
+[`rpi-metrics-bridge`](https://github.com/aaron-dernley/rpi-metrics-bridge)
+ops repo, not in this package, because it needs both extensions' model
+instances.
 
 ## License
 
